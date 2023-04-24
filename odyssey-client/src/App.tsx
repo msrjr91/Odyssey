@@ -1,26 +1,58 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import "./App.css";
+import { getToken } from "./services/methods";
 
-function App() {
+const apiURL = "https://test.api.amadeus.com/v1";
+
+export type Cities = {
+  type: string;
+  subType: string;
+  name: string;
+  iataCode: string;
+  address: {
+    countryCode: string;
+  };
+  geoCode: {
+    latitude: number;
+    longitude: number;
+  };
+};
+
+function CityList({ cities }: { cities: Cities[] }) {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ul>
+      {cities.map((city) => (
+        <li key={city.iataCode}>{city.name}</li>
+      ))}
+    </ul>
   );
 }
+
+function App() {
+  const [cities, setCities] = useState<Cities[]>([]);
+  useEffect(() => {
+    async function fetchData() {
+      const token = await getToken();
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      axios
+        .get<Cities[]>(`${apiURL}/reference-data/locations/cities`)
+        .then((response) => {
+          const cities: Cities[] = response.data;
+          setCities(cities);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    }
+    fetchData();
+  }, []);
+  
+  return (
+    <div className="App">
+      <CityList cities={cities} />
+    </div>
+)}
 
 export default App;
